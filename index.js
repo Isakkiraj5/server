@@ -12,8 +12,11 @@ const url = 'mongodb+srv://isakkiraj:Esscooty%407300@cluster0.fdsuknk.mongodb.ne
 const usermodel = require('./model/user');
 const serviceAppointment = require('./model/appointment');
 const vehicle = require('./model/vehicle');
-const port = process.env.PORT || 4000;
 
+require("dotenv").config()
+console.log(process.env)
+const port = process.env.PORT;
+const hostname=process.env.HOSTNAME
 mongoose.connect(url)
     .then(() => console.log('MongoDB connected'))
     .catch(err => console.log(err));
@@ -204,9 +207,8 @@ async function sendTestEmailNow() {
 
 
 
-app.listen(port, "localhost", async () => {
+app.listen(port, {hostname}, async () => {
     console.log(`Server started on http://localhost:${port}`);
-  
    //checkAppointments()
     // checkAppointments().catch(console.error);
 });
