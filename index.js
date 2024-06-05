@@ -206,7 +206,9 @@ async function sendTestEmailNow() {
 
 // Send mail with defined transport object
 
-
+app.get("/",(req,res) => {
+    res.send("hello")
+})
 
 
 app.listen(port, {hostname}, async () => {
