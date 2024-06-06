@@ -106,25 +106,29 @@ app.get('/api/appointments/:id', async (req, res) => {
 
 
 app.get('/api/appointments/expenses/:id', async (req, res) => {
-  const { id: userId } = req.params;
-  try {
-      const appointments = await serviceAppointment.find({ user_Id: userId });
-      const expenses = {};
-
-      // Aggregate expenses for each vehicle
-      appointments.forEach(appointment => {
-          const vehicleNumber = appointment.vehicle;
-          const total = appointment.total;
-          expenses[vehicleNumber] = (expenses[vehicleNumber] || 0) + total;
-      });
-
-      console.log("Expenses:", expenses);
-      res.json({ expenses });
-  } catch (error) {
-      console.error('Error fetching appointments:', error);
-      res.status(500).json({ message: 'Internal Server Error', error });
-  }
-});
+    const { id: userId } = req.params;
+    try {
+        const appointments = await serviceAppointment.find({ user_Id: userId });
+        const expenses = {};
+        appointments.forEach(appointment => {
+            const vehicleNumber = appointment.vehicle;
+            const date = new Date(appointment.date); 
+            const month = date.toISOString().substring(0, 7); 
+  
+            if (!expenses[vehicleNumber]) {
+                expenses[vehicleNumber] = { monthly: {}, total: 0 };
+            }
+            expenses[vehicleNumber].monthly[month] = (expenses[vehicleNumber].monthly[month] || 0) + appointment.total;
+            expenses[vehicleNumber].total += appointment.total;
+        });
+  
+        console.log("Expenses:", expenses);
+        res.json({ expenses });
+    } catch (error) {
+        console.error('Error fetching appointments:', error);
+        res.status(500).json({ message: 'Internal Server Error', error });
+    }
+  });
 
 const transporter = nodemailer.createTransport({
     service: 'gmail',
