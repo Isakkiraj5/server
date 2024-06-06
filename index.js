@@ -4,10 +4,14 @@ const cors = require('cors');
 const nodemailer = require('nodemailer');
 const cron = require('node-cron');
 const app = express();
+const bodyParser = require('body-parser');
+
+const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 
 app.use(cors());
 app.use(express.json());
-
+app.use(bodyParser.json());
 
 
 const url = 'mongodb+srv://isakkiraj:Esscooty%407300@cluster0.fdsuknk.mongodb.net/vehiclecare';
@@ -213,6 +217,78 @@ async function sendTestEmailNow() {
 app.get("/",(req,res) => {
     res.send("hello")
 })
+
+
+// Forgot Password
+app.post('/api/forgot-password', async (req, res) => {
+    const { email } = req.body;
+    try {
+      const user = await usermodel.findOne({ email });
+      if (!user) {
+        return res.status(400).json({ message: 'User with this email does not exist.' });
+      }
+  
+      // Generate OTP
+      const otp = crypto.randomBytes(3).toString('hex');
+      user.resetPasswordOTP = otp;
+      user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+      await user.save();
+  
+      // Send OTP via email
+      const transporter = nodemailer.createTransport({
+        service: 'Gmail',
+        auth: {
+          user: 'vehiclecare77@gmail.com',
+          pass: 'sgmw mjku fzks orwu',
+        },
+      });
+  
+      const mailOptions = {
+        from: 'vehiclecare77@gmail.com',
+        to: user.email,
+        subject: 'Password Reset OTP',
+        text: `Your OTP for password reset is: ${otp}. This OTP is valid for one hour.`,
+      };
+  
+      await transporter.sendMail(mailOptions);
+      res.status(200).json({ message: 'OTP sent to your email.' });
+    } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ message: 'Server error.' });
+    }
+  });
+  
+  app.post('/api/reset', async (req, res) => {
+    const { email, otp, newPassword } = req.body;
+    
+    try {
+      
+      const user = await usermodel.findOne({
+        email,
+        resetPasswordOTP: otp,
+        resetPasswordExpires: { $gt: Date.now() },
+      });
+  
+      // If user not found or OTP expired
+      if (!user) {
+        return res.status(400).json({ message: 'OTP is invalid or has expired.' });
+      }
+  
+      // Update user's password and reset OTP and expiry
+      user.password = newPassword; // Saving the plain text password
+      user.resetPasswordOTP = undefined;
+      user.resetPasswordExpires = undefined;
+      await user.save();
+      res.status(200).json({ message: 'Password has been updated successfully.' });
+    } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ message: 'Server error.' });
+    }
+});
+
+  
+
+
 
 
 app.listen(port, {hostname}, async () => {

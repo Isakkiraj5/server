@@ -20,6 +20,12 @@ const userSchema = new mongoose.Schema({
     required: true,
     match: [/^\d{10}$/, 'Mobile number must be exactly 10 digits'],
   },
+  resetPasswordOTP: {
+    type: String,
+  },
+  resetPasswordExpires: {
+    type: Date,
+  }
 });
 
 // Create and export the user model
