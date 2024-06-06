@@ -5,6 +5,7 @@ const nodemailer = require('nodemailer');
 const cron = require('node-cron');
 const app = express();
 const bodyParser = require('body-parser');
+const Razorpay = require('razorpay');
 
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
@@ -65,8 +66,14 @@ app.post('/api/vehicle', (req, res) => {
 
 app.post('/api/appointment', (req, res) => {
     serviceAppointment.create(req.body)
-        .then(appointment => res.json(appointment))
-        .catch(err => res.json(err));
+        .then(appointment => {
+            console.log(req.body);
+            res.json(appointment);
+        })
+        .catch(err => {
+            console.error(err);
+            res.status(500).json({ error: 'Internal server error' });
+        });
 });
 
 app.get('/api/user/:id', async (req, res) => {
@@ -228,13 +235,12 @@ app.post('/api/forgot-password', async (req, res) => {
         return res.status(400).json({ message: 'User with this email does not exist.' });
       }
   
-      // Generate OTP
+     
       const otp = crypto.randomBytes(3).toString('hex');
       user.resetPasswordOTP = otp;
       user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
       await user.save();
   
-      // Send OTP via email
       const transporter = nodemailer.createTransport({
         service: 'Gmail',
         auth: {
@@ -269,13 +275,13 @@ app.post('/api/forgot-password', async (req, res) => {
         resetPasswordExpires: { $gt: Date.now() },
       });
   
-      // If user not found or OTP expired
+      
       if (!user) {
         return res.status(400).json({ message: 'OTP is invalid or has expired.' });
       }
   
-      // Update user's password and reset OTP and expiry
-      user.password = newPassword; // Saving the plain text password
+      
+      user.password = newPassword; 
       user.resetPasswordOTP = undefined;
       user.resetPasswordExpires = undefined;
       await user.save();
@@ -286,8 +292,27 @@ app.post('/api/forgot-password', async (req, res) => {
     }
 });
 
-  
+app.post('/api/create-order', async (req, res) => {
+    const { amount, currency, receipt } = req.body;
 
+    const instance = new Razorpay({
+        key_id: 'rzp_test_1uFgghWu3HRlkf',
+        key_secret: '8RLGB9f5E7dPrw0T8LuARgub',
+    });
+
+    const options = {
+        amount: amount * 100,  // Amount in paise
+        currency,
+        receipt,
+    };
+
+    try {
+        const order = await instance.orders.create(options);
+        res.json(order);
+    } catch (error) {
+        res.status(500).json({ message: 'Error creating order', error });
+    }
+});
 
 
 

@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 
-// Define the appointment schema
 const appointmentSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -9,7 +8,7 @@ const appointmentSchema = new mongoose.Schema({
   services: {
     type: [String],
     required: true,
-    enum: ['Full Service', 'Oil Change', 'Tire Rotation', 'Brake Service'], // Allowed values
+    enum: ['Full Service', 'Oil Change', 'Tire Rotation', 'Brake Service'], 
   },
   vehicle: {
     type: String,
@@ -30,9 +29,14 @@ const appointmentSchema = new mongoose.Schema({
   total: {
     type: Number,
     required: true
+  },
+  paymentMethod: {
+    type: String,
+    required: true
   }
 });
 
+appointmentSchema.index({ vehicle: 1, date: 1 }, { unique: true });
 
 const serviceAppointment = mongoose.model('Service-Appointment', appointmentSchema);
 
